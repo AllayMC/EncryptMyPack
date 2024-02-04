@@ -7,6 +7,7 @@ import lombok.SneakyThrows;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -105,7 +106,7 @@ public class EncryptMyPack {
             // Init contents.json encryptor
             var secretKey = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "AES");
             var cipher = Cipher.getInstance("AES/CFB8/NoPadding");
-            cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey, new IvParameterSpec(key.substring(0, 16).getBytes(StandardCharsets.UTF_8)));
             // Write contents.json
             channel.position(0x100);
             var contentJson = GSON.toJson(new Content(contentEntries));
@@ -140,7 +141,7 @@ public class EncryptMyPack {
         var key = RandomStringUtils.randomAlphabetic(KEY_LENGTH);
         var secretKey = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "AES");
         var cipher = Cipher.getInstance("AES/CFB8/NoPadding");
-        cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey, new IvParameterSpec(key.substring(0, 16).getBytes(StandardCharsets.UTF_8)));
         // Encrypt the file
         var encryptedBytes = cipher.doFinal(bytes);
         // Check directories
