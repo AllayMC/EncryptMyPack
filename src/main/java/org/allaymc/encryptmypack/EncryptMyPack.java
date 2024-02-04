@@ -4,11 +4,13 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
 import lombok.SneakyThrows;
+import org.apache.commons.io.RandomAccessFiles;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -46,8 +48,8 @@ public class EncryptMyPack {
 
     public static final int KEY_LENGTH = 32;
 
-    public static final ByteBuffer VERSION = ByteBuffer.wrap(new byte[]{(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00});
-    public static final ByteBuffer MAGIC = ByteBuffer.wrap(new byte[]{(byte) 0xFC, (byte) 0xB9, (byte) 0xCF, (byte) 0x9B});
+    public static final byte[] VERSION = new byte[]{(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00};
+    public static final byte[] MAGIC = new byte[]{(byte) 0xFC, (byte) 0xB9, (byte) 0xCF, (byte) 0x9B};
 
     public static void main(String[] args) {
         if (args.length < 3 || args.length > 4) {
@@ -95,23 +97,23 @@ public class EncryptMyPack {
         var contentJsonPath = outputFolder.resolve("contents.json");
         // Remove the old one
         Files.deleteIfExists(contentJsonPath);
-        try (var channel = Files.newByteChannel(Files.createFile(contentJsonPath), WRITE)) {
-            channel.write(VERSION);
-            channel.write(MAGIC);
-            channel.position(0x10);
+        try (var file = new RandomAccessFile(Files.createFile(contentJsonPath).toFile(), "rw")) {
+            file.write(VERSION);
+            file.write(MAGIC);
+            file.seek(0x10);
             var contentIdBytes = contentId.getBytes();
             // Write content id length
-            channel.write(ByteBuffer.wrap(new byte[]{(byte) contentIdBytes.length}));
+            file.write(contentIdBytes.length);
             // Write content id
-            channel.write(ByteBuffer.wrap(contentIdBytes));
+            file.write(contentIdBytes);
             // Init contents.json encryptor
             var secretKey = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "AES");
             var cipher = Cipher.getInstance("AES/CFB8/NoPadding");
             cipher.init(Cipher.ENCRYPT_MODE, secretKey, new IvParameterSpec(key.substring(0, 16).getBytes(StandardCharsets.UTF_8)));
             // Write contents.json
-            channel.position(0x100);
             var contentJson = GSON.toJson(new Content(contentEntries));
-            channel.write(ByteBuffer.wrap(cipher.doFinal(contentJson.getBytes(StandardCharsets.UTF_8))));
+            file.seek(0x100);
+            file.write(cipher.doFinal(contentJson.getBytes(StandardCharsets.UTF_8)));
             log("Successfully create contents.json");
         }
         log("Key: " + key);
@@ -194,7 +196,7 @@ public class EncryptMyPack {
 
     public record Content(List<ContentEntry> content) {}
 
-    public record ContentEntry(String packRelativePath, String key) {}
+    public record ContentEntry(String path, String key) {}
 
     public static class Manifest {
 
