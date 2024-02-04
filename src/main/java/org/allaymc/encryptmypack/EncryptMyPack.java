@@ -8,8 +8,6 @@ import org.apache.commons.lang3.RandomStringUtils;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.BufferedOutputStream;
-import java.io.FileOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -20,7 +18,6 @@ import java.util.List;
 
 import static java.nio.file.Files.*;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-import static java.nio.file.StandardOpenOption.READ;
 import static java.nio.file.StandardOpenOption.WRITE;
 import static org.apache.commons.io.FilenameUtils.getExtension;
 
@@ -86,7 +83,7 @@ public class EncryptMyPack {
         var contentJsonPath = outputFolder.resolve("contents.json");
         // Remove the old one
         Files.deleteIfExists(contentJsonPath);
-        try (var channel = Files.newByteChannel(Files.createFile(contentJsonPath), READ, WRITE)) {
+        try (var channel = Files.newByteChannel(Files.createFile(contentJsonPath), WRITE)) {
             channel.write(VERSION);
             channel.write(MAGIC);
             channel.position(0x10);
