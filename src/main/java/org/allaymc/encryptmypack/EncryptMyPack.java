@@ -29,7 +29,7 @@ import static org.apache.commons.io.FilenameUtils.getExtension;
 public class EncryptMyPack {
 
     public static final Gson GSON = new GsonBuilder()
-            .disableHtmlEscaping()// 禁止将部分特殊字符转义为unicode编码
+            .disableHtmlEscaping()
             .create();
 
     public static final String DEFAULT_KEY = "liulihaocai123456789123456789123";
@@ -46,7 +46,11 @@ public class EncryptMyPack {
     public static final ByteBuffer MAGIC = ByteBuffer.wrap(new byte[]{(byte) 0xFC, (byte) 0xB9, (byte) 0xCF, (byte) 0x9B});
 
     public static void main(String[] args) {
-        encrypt(Path.of("test_pack"), Path.of("test_pack_encrypted"), DEFAULT_KEY);
+        if (args.length < 2 || args.length > 3) {
+            log("Usage: java -jar EncryptMyPack.jar <inputFolder> <outputFolder> [key]");
+            return;
+        }
+        encrypt(Path.of(args[0]), Path.of(args[1]), args.length > 2 ? args[2] : DEFAULT_KEY);
     }
 
     @SneakyThrows
