@@ -192,7 +192,7 @@ public class EncryptMyPack {
         System.out.println(msg);
     }
 
-    public record Content(List<ContentEntry> entries) {}
+    public record Content(List<ContentEntry> content) {}
 
     public record ContentEntry(String packRelativePath, String key) {}
 
