@@ -31,6 +31,7 @@ public class EncryptMyPack {
 
     public static final Gson GSON = new GsonBuilder()
             .disableHtmlEscaping()
+            .setLenient()
             .create();
 
     public static final String USAGE = "Usage: java -jar EncryptMyPack.jar <encrypt|decrypt> <inputFolder> <outputFolder> [key]";
