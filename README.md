@@ -1,6 +1,6 @@
 # EncryptMyPack
 
-![license](https://img.shields.io/badge/License-LGPL_2.1-blue.svg)
+![license](https://img.shields.io/badge/License-LGPL_3.0-blue.svg)
 ![version](https://img.shields.io/badge/Version-BETA-green.svg)
 
 A command line util for encrypting and decrypting resource packs.
