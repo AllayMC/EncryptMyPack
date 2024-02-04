@@ -106,6 +106,7 @@ public class EncryptMyPack {
             channel.write(ByteBuffer.wrap(cipher.doFinal(contentJson.getBytes(StandardCharsets.UTF_8))));
             log("Successfully create contents.json");
         }
+        log("Key: " + key);
     }
 
     @SneakyThrows
