@@ -87,7 +87,7 @@ public class EncryptMyPack {
             }
             var packRelativePath = inputFolder.relativize(file);
             log("File: " + file + ", entryKey: " + entryKey + ", packRelativePath: " + packRelativePath + ", outputPath: " + outputPath);
-            contentEntries.add(new ContentEntry(packRelativePath.toString(), entryKey));
+            contentEntries.add(new ContentEntry(packRelativePath.toString().replaceAll("\\\\", "/"), entryKey));
         });
 
         // Generate contents.json
