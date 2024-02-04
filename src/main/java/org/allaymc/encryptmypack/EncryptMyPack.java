@@ -4,14 +4,13 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
 import lombok.SneakyThrows;
-import org.apache.commons.io.RandomAccessFiles;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -21,7 +20,6 @@ import java.util.List;
 
 import static java.nio.file.Files.*;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-import static java.nio.file.StandardOpenOption.WRITE;
 import static org.apache.commons.io.FilenameUtils.getExtension;
 
 /**
@@ -32,6 +30,13 @@ import static org.apache.commons.io.FilenameUtils.getExtension;
 public class EncryptMyPack {
 
     public static final Gson GSON = new GsonBuilder()
+            .disableHtmlEscaping()
+            .serializeNulls()
+            .setLenient()
+            .create();
+
+    public static final Gson GSON_PRETTY_PRINTING = new GsonBuilder()
+            .setPrettyPrinting()
             .disableHtmlEscaping()
             .serializeNulls()
             .setLenient()
@@ -59,17 +64,18 @@ public class EncryptMyPack {
         }
         switch (args[0]) {
             case "encrypt" -> encrypt(Path.of(args[1]), Path.of(args[2]), args.length > 3 ? args[3] : DEFAULT_KEY);
-            case "decrypt" -> log("coming soon");
+            case "decrypt" -> {
+                // To decrypt, the user must provide the pack's key
+                if (args.length != 4) throw new IllegalArgumentException("key must be provided to decrypt");
+                decrypt(Path.of(args[1]), Path.of(args[2]), args[3]);
+            }
             default -> log(USAGE);
         }
     }
 
     @SneakyThrows
     public static void encrypt(Path inputFolder, Path outputFolder, String key) {
-        // Check argument
-        if (key.length() != KEY_LENGTH) throw new IllegalArgumentException("key length must be 32");
-        if (!exists(inputFolder)) throw new IllegalArgumentException("input folder not exists");
-        if (!exists(outputFolder)) Files.createDirectories(outputFolder);
+        checkArgs(inputFolder, outputFolder, key);
 
         // Find content id
         var contentId = findContentId(inputFolder.resolve("manifest.json"));
@@ -121,6 +127,15 @@ public class EncryptMyPack {
     }
 
     @SneakyThrows
+    public static void checkArgs(Path inputFolder, Path outputFolder, String key) {
+        // Check argument
+        if (key.length() != KEY_LENGTH) throw new IllegalArgumentException("key length must be 32");
+        if (inputFolder.equals(outputFolder)) throw new IllegalArgumentException("input folder and output folder cannot be the same");
+        if (!exists(inputFolder)) throw new IllegalArgumentException("input folder not exists");
+        if (!exists(outputFolder)) Files.createDirectories(outputFolder);
+    }
+
+    @SneakyThrows
     public static void encryptExcludedFile(Path file, Path outputPath) {
         log("Excluded file: " + file + ", copy directly");
         if (isJson(file)) {
@@ -148,15 +163,77 @@ public class EncryptMyPack {
         cipher.init(Cipher.ENCRYPT_MODE, secretKey, new IvParameterSpec(key.substring(0, 16).getBytes(StandardCharsets.UTF_8)));
         // Encrypt the file
         var encryptedBytes = cipher.doFinal(bytes);
-        // Check directories
-        var dir = outputPath.getParent();
-        if (!exists(dir)) Files.createDirectories(dir);
-        // Delete old file
+        checkDirectories(outputPath);
         deleteIfExists(outputPath);
         // Write bytes
-        createFile(outputPath);
         write(outputPath, encryptedBytes);
         return key;
+    }
+
+    @SneakyThrows
+    public static void checkDirectories(Path outputPath) {
+        var dir = outputPath.getParent();
+        if (!exists(dir)) Files.createDirectories(dir);
+    }
+
+    @SneakyThrows
+    public static void decrypt(Path inputFolder, Path outputFolder, String key) {
+        checkArgs(inputFolder, outputFolder, key);
+
+        Content content;
+        try (var file = new RandomAccessFile(inputFolder.resolve("contents.json").toFile(), "rw")) {
+            file.seek(0x100);
+            var buffer = new byte[(int) (file.length() - 0x100)];
+            file.readFully(buffer);
+            var secretKey = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "AES");
+            var cipher = Cipher.getInstance("AES/CFB8/NoPadding");
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(key.substring(0, 16).getBytes(StandardCharsets.UTF_8)));
+            var decryptedBytes = cipher.doFinal(buffer);
+            content = GSON.fromJson(new String(decryptedBytes), Content.class);
+            log("Content: " + content);
+        }
+
+        // Decrypt files
+        for (var contentEntry : content.content) {
+            var entryInputPath = inputFolder.resolve(contentEntry.path);
+            if (!Files.exists(entryInputPath)) {
+                err("File not exists: " + entryInputPath);
+                continue;
+            }
+            var entryOutputPath = outputFolder.resolve(contentEntry.path);
+            checkDirectories(entryOutputPath);
+            var entryKey = contentEntry.key;
+            if (entryKey == null) {
+                // manifest.json, pack_icon.png, bug_pack_icon.png etc...
+                // Just copy it to output folder
+                log("Copying file: " + entryInputPath);
+                if (isJson(entryInputPath)) {
+                    deleteIfExists(entryOutputPath);
+                    writeString(entryOutputPath, prettyJson(entryInputPath));
+                } else {
+                    copy(entryInputPath, entryOutputPath, REPLACE_EXISTING);
+                }
+            } else {
+                log("Decrypting file: " + entryInputPath);
+                var entryKeyBytes = entryKey.getBytes(StandardCharsets.UTF_8);
+                if (entryKeyBytes.length != 32) {
+                    err("Invalid key length (length should be 32): " + entryKey);
+                    continue;
+                }
+                var secretKey = new SecretKeySpec(entryKeyBytes, "AES");
+                var cipher = Cipher.getInstance("AES/CFB8/NoPadding");
+                cipher.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(entryKey.substring(0, 16).getBytes(StandardCharsets.UTF_8)));
+                var decryptedBytes = cipher.doFinal(readAllBytes(entryInputPath));
+                deleteIfExists(entryOutputPath);
+                if (isJson(entryInputPath)) {
+                    writeString(entryOutputPath, prettyJson(new String(decryptedBytes)));
+                } else {
+                    write(entryOutputPath, decryptedBytes);
+                }
+            }
+        }
+
+        log("Decrypted " + inputFolder + " with key " + key + " successfully");
     }
 
     public static boolean isJson(Path file) {
@@ -166,6 +243,15 @@ public class EncryptMyPack {
     @SneakyThrows
     public static String shrinkJson(Path file) {
         return GSON.toJson(GSON.fromJson(Files.newBufferedReader(file), Object.class));
+    }
+
+    @SneakyThrows
+    public static String prettyJson(Path file) {
+        return GSON_PRETTY_PRINTING.toJson(GSON.fromJson(Files.newBufferedReader(file), Object.class));
+    }
+
+    public static String prettyJson(String json) {
+        return GSON_PRETTY_PRINTING.toJson(GSON.fromJson(json, Object.class));
     }
 
     @SneakyThrows
@@ -193,6 +279,10 @@ public class EncryptMyPack {
 
     public static void log(String msg) {
         System.out.println(msg);
+    }
+
+    public static void err(String msg) {
+        System.err.println(msg);
     }
 
     public record Content(List<ContentEntry> content) {}

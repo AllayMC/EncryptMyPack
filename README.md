@@ -19,11 +19,12 @@ Command: `java -jar EncryptMyPack.jar encrypt <inputFolder> <outputFolder> [key]
 
 After the encryption, a `contents.json` should now be in your pack/output directory, and the key will be displayed in the console
 
-### Decryption (coming soon)
+### Decryption
 
 Command: `java -jar EncryptMyPack.jar decrypt <inputFolder> <outputFolder> <key>`
 
 1. Again, the key should be a 32 character long string.
+2. To decrypt the pack, you must provide its key
 
 ## Special thanks
 
