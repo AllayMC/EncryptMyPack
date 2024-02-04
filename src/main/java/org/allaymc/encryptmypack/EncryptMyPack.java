@@ -36,13 +36,6 @@ public class EncryptMyPack {
             .setLenient()
             .create();
 
-    public static final Gson GSON_PRETTY_PRINTING = new GsonBuilder()
-            .setPrettyPrinting()
-            .disableHtmlEscaping()
-            .serializeNulls()
-            .setLenient()
-            .create();
-
     public static final String USAGE = "Usage: java -jar EncryptMyPack.jar <encrypt|decrypt> <inputFolder> <outputFolder> [key]";
 
     public static final String DEFAULT_KEY = "liulihaocai123456789123456789123";
@@ -139,24 +132,13 @@ public class EncryptMyPack {
     @SneakyThrows
     public static void encryptExcludedFile(Path file, Path outputPath) {
         log("Excluded file: " + file + ", copy directly");
-        if (isJson(file)) {
-            deleteIfExists(outputPath);
-            // Json file should be shrunk
-            writeString(outputPath, shrinkJson(file));
-        } else {
-            // Copy file to output path directly
-            copy(file, outputPath, REPLACE_EXISTING);
-        }
+        copy(file, outputPath, REPLACE_EXISTING);
     }
 
     @SneakyThrows
     public static String encryptFile(Path file, Path outputPath) {
         byte[] bytes;
-        if (isJson(file)) {
-            bytes = shrinkJson(file).getBytes(StandardCharsets.UTF_8);
-        } else {
-            bytes = readAllBytes(file);
-        }
+        bytes = readAllBytes(file);
         // Init encryptor
         var key = randomAlphanumeric(KEY_LENGTH);
         var secretKey = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "AES");
@@ -208,12 +190,7 @@ public class EncryptMyPack {
                 // manifest.json, pack_icon.png, bug_pack_icon.png etc...
                 // Just copy it to output folder
                 log("Copying file: " + entryInputPath);
-                if (isJson(entryInputPath)) {
-                    deleteIfExists(entryOutputPath);
-                    writeString(entryOutputPath, prettyJson(entryInputPath));
-                } else {
-                    copy(entryInputPath, entryOutputPath, REPLACE_EXISTING);
-                }
+                copy(entryInputPath, entryOutputPath, REPLACE_EXISTING);
             } else {
                 log("Decrypting file: " + entryInputPath);
                 var entryKeyBytes = entryKey.getBytes(StandardCharsets.UTF_8);
@@ -226,33 +203,11 @@ public class EncryptMyPack {
                 cipher.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(entryKey.substring(0, 16).getBytes(StandardCharsets.UTF_8)));
                 var decryptedBytes = cipher.doFinal(readAllBytes(entryInputPath));
                 deleteIfExists(entryOutputPath);
-                if (isJson(entryInputPath)) {
-                    writeString(entryOutputPath, prettyJson(new String(decryptedBytes)));
-                } else {
-                    write(entryOutputPath, decryptedBytes);
-                }
+                write(entryOutputPath, decryptedBytes);
             }
         }
 
         log("Decrypted " + inputFolder + " with key " + key + " successfully");
-    }
-
-    public static boolean isJson(Path file) {
-        return getExtension(file.toString()).equals("json");
-    }
-
-    @SneakyThrows
-    public static String shrinkJson(Path file) {
-        return GSON.toJson(GSON.fromJson(Files.newBufferedReader(file), Object.class));
-    }
-
-    @SneakyThrows
-    public static String prettyJson(Path file) {
-        return GSON_PRETTY_PRINTING.toJson(GSON.fromJson(Files.newBufferedReader(file), Object.class));
-    }
-
-    public static String prettyJson(String json) {
-        return GSON_PRETTY_PRINTING.toJson(GSON.fromJson(json, Object.class));
     }
 
     @SneakyThrows
