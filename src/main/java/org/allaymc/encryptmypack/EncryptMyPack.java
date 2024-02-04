@@ -1,4 +1,4 @@
-package org.allaymc;
+package org.allaymc.encryptmypack;
 
 /**
  * EncryptMyPack Project 2024/2/4
