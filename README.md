@@ -28,3 +28,6 @@ Command: `java -jar EncryptMyPack.jar decrypt <inputFolder> <outputFolder> <key>
 ## Special thanks
 
 Thanks to [mcrputil](https://github.com/valaphee/mcrputil) for their great work!
+
+## License
+LGPL-3.0 © AllayMC
