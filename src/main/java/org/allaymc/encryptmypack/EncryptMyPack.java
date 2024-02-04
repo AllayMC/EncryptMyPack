@@ -32,6 +32,8 @@ public class EncryptMyPack {
             .disableHtmlEscaping()
             .create();
 
+    public static final String USAGE = "Usage: java -jar EncryptMyPack.jar <encrypt|decrypt> <inputFolder> <outputFolder> [key]";
+
     public static final String DEFAULT_KEY = "liulihaocai123456789123456789123";
 
     public static final List<String> EXCLUDE = List.of(
@@ -46,11 +48,15 @@ public class EncryptMyPack {
     public static final ByteBuffer MAGIC = ByteBuffer.wrap(new byte[]{(byte) 0xFC, (byte) 0xB9, (byte) 0xCF, (byte) 0x9B});
 
     public static void main(String[] args) {
-        if (args.length < 2 || args.length > 3) {
-            log("Usage: java -jar EncryptMyPack.jar <inputFolder> <outputFolder> [key]");
+        if (args.length < 3 || args.length > 4) {
+            log(USAGE);
             return;
         }
-        encrypt(Path.of(args[0]), Path.of(args[1]), args.length > 2 ? args[2] : DEFAULT_KEY);
+        switch (args[0]) {
+            case "encrypt" -> encrypt(Path.of(args[1]), Path.of(args[2]), args.length > 3 ? args[3] : DEFAULT_KEY);
+            case "decrypt" -> log("coming soon");
+            default -> log(USAGE);
+        }
     }
 
     @SneakyThrows
