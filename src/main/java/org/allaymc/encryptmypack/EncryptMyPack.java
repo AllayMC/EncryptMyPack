@@ -21,6 +21,7 @@ import java.util.List;
 import static java.nio.file.Files.*;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static org.apache.commons.io.FilenameUtils.getExtension;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 
 /**
  * EncryptMyPack Project 2024/2/4
@@ -108,7 +109,7 @@ public class EncryptMyPack {
             file.write(VERSION);
             file.write(MAGIC);
             file.seek(0x10);
-            var contentIdBytes = contentId.getBytes();
+            var contentIdBytes = contentId.getBytes(StandardCharsets.UTF_8);
             // Write content id length
             file.write(contentIdBytes.length);
             // Write content id
@@ -152,12 +153,12 @@ public class EncryptMyPack {
     public static String encryptFile(Path file, Path outputPath) {
         byte[] bytes;
         if (isJson(file)) {
-            bytes = shrinkJson(file).getBytes();
+            bytes = shrinkJson(file).getBytes(StandardCharsets.UTF_8);
         } else {
             bytes = readAllBytes(file);
         }
         // Init encryptor
-        var key = RandomStringUtils.randomAlphabetic(KEY_LENGTH);
+        var key = randomAlphanumeric(KEY_LENGTH);
         var secretKey = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "AES");
         var cipher = Cipher.getInstance("AES/CFB8/NoPadding");
         cipher.init(Cipher.ENCRYPT_MODE, secretKey, new IvParameterSpec(key.substring(0, 16).getBytes(StandardCharsets.UTF_8)));
@@ -216,8 +217,8 @@ public class EncryptMyPack {
             } else {
                 log("Decrypting file: " + entryInputPath);
                 var entryKeyBytes = entryKey.getBytes(StandardCharsets.UTF_8);
-                if (entryKeyBytes.length != 32) {
-                    err("Invalid key length (length should be 32): " + entryKey);
+                if (entryKeyBytes.length != KEY_LENGTH) {
+                    err("Invalid key length (length should be " + KEY_LENGTH + "): " + entryKey);
                     continue;
                 }
                 var secretKey = new SecretKeySpec(entryKeyBytes, "AES");
