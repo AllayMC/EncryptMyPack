@@ -33,6 +33,7 @@ public class EncryptMyPack {
 
     public static final Gson GSON = new GsonBuilder()
             .disableHtmlEscaping()
+            .serializeNulls()
             .setLenient()
             .create();
 
