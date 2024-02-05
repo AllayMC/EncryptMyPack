@@ -221,7 +221,7 @@ public class EncryptMyPack {
     public static void checkArgs(Path inputPath, String outputName, String key) {
         // Check argument
         if (key.length() != KEY_LENGTH) throw new IllegalArgumentException("key length must be 32");
-        if (!exists(inputPath)) throw new IllegalArgumentException("input folder not exists");
+        if (!exists(inputPath)) throw new IllegalArgumentException("input zip not exists");
         if (inputPath.getFileName().toString().equals(outputName))
             throw new IllegalArgumentException("input and output cannot be the same");
     }
