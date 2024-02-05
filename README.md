@@ -11,17 +11,17 @@ Before use this tool, make sure you have java 21 runtime!
 
 ### Encryption
 
-Command: `java -jar EncryptMyPack.jar encrypt <inputFolder> <outputFolder> [key]`
+Command: `java -jar EncryptMyPack.jar encrypt <inputZip> <outputZip> [key]`
 
 1. The key should be a 32 character long string. If you don't provide a key, the key will be `liulihaocai123456789123456789123`
 
-2. Make sure your pack is unzipped, and in your pack directory should be a manifest.json
+2. Make sure your pack is a zip file, and in your pack should be a manifest.json
 
-After the encryption, a `contents.json` should now be in your pack/output directory, and the key will be displayed in the console
+After the encryption, a `contents.json` should now be in output zip file, and the key will be displayed in the console
 
 ### Decryption
 
-Command: `java -jar EncryptMyPack.jar decrypt <inputFolder> <outputFolder> <key>`
+Command: `java -jar EncryptMyPack.jar decrypt <inputZip> <outputZip> <key>`
 
 1. Again, the key should be a 32 character long string.
 2. To decrypt the pack, you must provide its key
