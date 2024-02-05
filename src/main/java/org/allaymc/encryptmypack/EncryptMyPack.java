@@ -189,7 +189,7 @@ public class EncryptMyPack {
                 continue;
             }
             var bytes = inputZip.getInputStream(zipEntry).readAllBytes();
-            outputStream.putNextEntry(new ZipEntry(entryPath));
+            outputStream.putNextEntry((ZipEntry) zipEntry.clone());
             var entryKey = contentEntry.key;
             if (entryKey == null) {
                 // manifest.json, pack_icon.png, bug_pack_icon.png etc...
