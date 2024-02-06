@@ -5,15 +5,22 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
 import lombok.SneakyThrows;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.ZipEntry;
@@ -93,9 +100,14 @@ public class EncryptMyPack {
         var outputStream = new ZipOutputStream(new FileOutputStream(outputName), StandardCharsets.UTF_8);
         // Encrypt files
         inputZip.stream().forEach(zipEntry -> {
-            if (zipEntry.isDirectory()) {
+            if (isSubPackRoot(zipEntry)) {
+                // Handle sub pack
+                encryptSubPack(inputZip, outputStream, zipEntry.getName(), key, contentId);
                 return;
             }
+            if (zipEntry.isDirectory()) return;
+            // Sub pack files will be handled in encryptSubPack()
+            if (isSubPackFile(zipEntry)) return;
             String entryKey = null;
             // Check if file is excluded
             if (EXCLUDE.contains(zipEntry.getName())) {
@@ -109,9 +121,34 @@ public class EncryptMyPack {
             contentEntries.add(new ContentEntry(zipEntry.getName(), entryKey));
         });
 
-        // Generate contents.json
-        var contentsZipEntry = new ZipEntry("contents.json");
-        outputStream.putNextEntry(contentsZipEntry);
+        generateContentsJson("contents.json", outputStream, contentId, key, contentEntries);
+        outputStream.close();
+        log("Encryption finish. Key: " + key);
+    }
+
+    @SneakyThrows
+    public static void encryptSubPack(ZipFile inputZip, ZipOutputStream zos, String subPackPath, String key, String contentId) {
+        log("Encrypting sub pack: " + subPackPath);
+        var subPackContentEntries = new ArrayList<ContentEntry>();
+
+        // Encrypt files
+        inputZip.stream().forEach(zipEntry -> {
+            if (zipEntry.isDirectory()) {
+                return;
+            }
+            if (!zipEntry.getName().startsWith(subPackPath)) {
+                return;
+            }
+            String entryKey = encryptFile(inputZip, zos, zipEntry);
+            log("File: " + zipEntry.getName() + ", entryKey: " + entryKey);
+            subPackContentEntries.add(new ContentEntry(zipEntry.getName().substring(subPackPath.length()), entryKey));
+        });
+
+        generateContentsJson(subPackPath + "contents.json", zos, contentId, key, subPackContentEntries);
+    }
+
+    public static void generateContentsJson(String name, ZipOutputStream outputStream, String contentId, String key, ArrayList<ContentEntry> contentEntries) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
+        outputStream.putNextEntry(new ZipEntry(name));
         try (var stream = new ByteArrayOutputStream()) {
             stream.write(VERSION);
             stream.write(MAGIC);
@@ -129,12 +166,18 @@ public class EncryptMyPack {
             var contentJson = GSON.toJson(new Content(contentEntries));
             paddingTo(stream, 0x100);
             stream.write(cipher.doFinal(contentJson.getBytes(StandardCharsets.UTF_8)));
-            log("Successfully create contents.json");
             outputStream.write(stream.toByteArray());
-            outputStream.closeEntry();
-            outputStream.close();
         }
-        log("Key: " + key);
+        outputStream.closeEntry();
+        log("Successfully create contents.json");
+    }
+
+    public static boolean isSubPackFile(ZipEntry zipEntry) {
+        return zipEntry.getName().startsWith("subpacks/");
+    }
+
+    public static boolean isSubPackRoot(ZipEntry zipEntry) {
+        return zipEntry.isDirectory() && zipEntry.getName().startsWith("subpacks/") && calCharCount(zipEntry.getName(), '/') == 2;
     }
 
     @SneakyThrows
@@ -240,6 +283,14 @@ public class EncryptMyPack {
         if (manifestEntry == null) throw new IllegalArgumentException("manifest file not exists");
         Manifest manifest = GSON.fromJson(new JsonReader(new InputStreamReader(zip.getInputStream(manifestEntry), StandardCharsets.UTF_8)), Manifest.class);
         return manifest.header.uuid;
+    }
+
+    public static int calCharCount(String str, char target) {
+        int count = 0;
+        for (char c : str.toCharArray()) {
+            if (c == target) count++;
+        }
+        return count;
     }
 
     public static void log(String msg) {

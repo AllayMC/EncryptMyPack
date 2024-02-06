@@ -5,6 +5,10 @@
 
 A command line util for encrypting and decrypting resource packs.
 
+## Feature
+ - Encrypt and decrypt resource packs
+ - Support resource pack that contains sub packs
+
 ## Usage
 
 Before use this tool, make sure you have java 21 runtime!
