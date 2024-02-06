@@ -208,17 +208,7 @@ public class EncryptMyPack {
 
     @SneakyThrows
     public static void decrypt(ZipFile inputZip, String outputName, String key) {
-        Content content;
-        try (var stream = inputZip.getInputStream(inputZip.getEntry("contents.json"))) {
-            stream.skip(0x100);
-            var bytes = stream.readAllBytes();
-            var secretKey = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "AES");
-            var cipher = Cipher.getInstance("AES/CFB8/NoPadding");
-            cipher.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(key.substring(0, 16).getBytes(StandardCharsets.UTF_8)));
-            var decryptedBytes = cipher.doFinal(bytes);
-            content = GSON.fromJson(new String(decryptedBytes), Content.class);
-            log("Content: " + content);
-        }
+        Content content = decryptContentsJson(inputZip, "contents.json", key);
 
         // Delete old output
         Files.deleteIfExists(Path.of(outputName));
@@ -255,9 +245,57 @@ public class EncryptMyPack {
                 outputStream.closeEntry();
             }
         }
-        outputStream.close();
 
+        // Handle sub packs (if exist)
+        inputZip.stream().filter(EncryptMyPack::isSubPackRoot).forEach(zipEntry -> decryptSubPack(inputZip, outputStream, zipEntry.getName(), key));
+
+        outputStream.close();
         log("Decrypted " + inputZip.getName() + " with key " + key + " successfully");
+    }
+
+    @SneakyThrows
+    public static void decryptSubPack(ZipFile inputZip, ZipOutputStream zos, String subPackPath, String key) {
+        log("Decrypting sub pack: " + subPackPath);
+        Content content = decryptContentsJson(inputZip, subPackPath + "contents.json", key);
+
+        for (var contentEntry : content.content) {
+            var entryPath = subPackPath + contentEntry.path;
+            var zipEntry = inputZip.getEntry(entryPath);
+            if (zipEntry == null) {
+                err("Zip entry not exists: " + entryPath);
+                continue;
+            }
+            var bytes = inputZip.getInputStream(zipEntry).readAllBytes();
+            zos.putNextEntry((ZipEntry) zipEntry.clone());
+            var entryKey = contentEntry.key;
+            log("Decrypting file: " + entryPath);
+            var entryKeyBytes = entryKey.getBytes(StandardCharsets.UTF_8);
+            if (entryKeyBytes.length != KEY_LENGTH) {
+                err("Invalid key length (length should be " + KEY_LENGTH + "): " + entryKey);
+                continue;
+            }
+            var secretKey = new SecretKeySpec(entryKeyBytes, "AES");
+            var cipher = Cipher.getInstance("AES/CFB8/NoPadding");
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(entryKey.substring(0, 16).getBytes(StandardCharsets.UTF_8)));
+            var decryptedBytes = cipher.doFinal(bytes);
+            zos.write(decryptedBytes);
+            zos.closeEntry();
+        }
+    }
+
+    @SneakyThrows
+    private static Content decryptContentsJson(ZipFile inputZip, String subPackPath, String key) {
+        try (var stream = inputZip.getInputStream(inputZip.getEntry(subPackPath))) {
+            stream.skip(0x100);
+            var bytes = stream.readAllBytes();
+            var secretKey = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "AES");
+            var cipher = Cipher.getInstance("AES/CFB8/NoPadding");
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(key.substring(0, 16).getBytes(StandardCharsets.UTF_8)));
+            var decryptedBytes = cipher.doFinal(bytes);
+            Content content = GSON.fromJson(new String(decryptedBytes), Content.class);
+            log("Decrypted content json: " + content);
+            return content;
+        }
     }
 
     @SneakyThrows
