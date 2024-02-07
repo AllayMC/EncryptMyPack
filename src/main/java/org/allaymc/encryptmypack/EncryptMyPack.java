@@ -37,24 +37,11 @@ import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
  */
 public class EncryptMyPack {
 
-    public static final Gson GSON = new GsonBuilder()
-            .disableHtmlEscaping()
-            .serializeNulls()
-            .setLenient()
-            .create();
-
+    public static final Gson GSON = new GsonBuilder().disableHtmlEscaping().serializeNulls().setLenient().create();
     public static final String USAGE = "Usage: java -jar EncryptMyPack.jar <encrypt|decrypt> <inputFolder> <outputFolder> [key]";
-
     public static final String DEFAULT_KEY = "liulihaocai123456789123456789123";
-
-    public static final List<String> EXCLUDE = List.of(
-            "manifest.json",
-            "pack_icon.png",
-            "bug_pack_icon.png"
-    );
-
+    public static final List<String> EXCLUDE = List.of("manifest.json", "pack_icon.png", "bug_pack_icon.png");
     public static final int KEY_LENGTH = 32;
-
     public static final byte[] VERSION = new byte[]{(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00};
     public static final byte[] MAGIC = new byte[]{(byte) 0xFC, (byte) 0xB9, (byte) 0xCF, (byte) 0x9B};
 
@@ -176,14 +163,6 @@ public class EncryptMyPack {
         log("Successfully create contents.json");
     }
 
-    public static boolean isSubPackFile(ZipEntry zipEntry) {
-        return zipEntry.getName().startsWith("subpacks/");
-    }
-
-    public static boolean isSubPackRoot(ZipEntry zipEntry) {
-        return zipEntry.isDirectory() && zipEntry.getName().startsWith("subpacks/") && calCharCount(zipEntry.getName(), '/') == 2;
-    }
-
     @SneakyThrows
     public static void encryptExcludedFile(ZipFile inputZip, ZipOutputStream outputStream, ZipEntry zipEntry) {
         log("Excluded file: " + zipEntry.getName() + ", copy directly");
@@ -225,17 +204,16 @@ public class EncryptMyPack {
                 err("Zip entry not exists: " + entryPath);
                 continue;
             }
-            var bytes = inputZip.getInputStream(zipEntry).readAllBytes();
             outputStream.putNextEntry((ZipEntry) zipEntry.clone());
-            var entryKey = contentEntry.key;
-            if (entryKey == null) {
+            var bytes = inputZip.getInputStream(zipEntry).readAllBytes();
+            if (contentEntry.key == null) {
                 // manifest.json, pack_icon.png, bug_pack_icon.png etc...
                 // Just copy it to output folder
                 log("Copying file: " + entryPath);
                 outputStream.write(bytes);
             } else {
                 log("Decrypting file: " + entryPath);
-                decryptFile(outputStream, bytes, entryKey);
+                decryptFile(outputStream, bytes, contentEntry.key);
             }
             outputStream.closeEntry();
         }
@@ -245,6 +223,26 @@ public class EncryptMyPack {
 
         outputStream.close();
         log("Decrypted " + inputZip.getName() + " with key " + key + " successfully");
+    }
+
+    @SneakyThrows
+    public static void decryptSubPack(ZipFile inputZip, ZipOutputStream zos, String subPackPath, String key) {
+        log("Decrypting sub pack: " + subPackPath);
+        Content content = decryptContentsJson(inputZip, subPackPath + "contents.json", key);
+
+        for (var contentEntry : content.content) {
+            var entryPath = subPackPath + contentEntry.path;
+            var zipEntry = inputZip.getEntry(entryPath);
+            if (zipEntry == null) {
+                err("Zip entry not exists: " + entryPath);
+                continue;
+            }
+            zos.putNextEntry((ZipEntry) zipEntry.clone());
+            var bytes = inputZip.getInputStream(zipEntry).readAllBytes();
+            log("Decrypting sub pack file: " + entryPath);
+            decryptFile(zos, bytes, contentEntry.key);
+            zos.closeEntry();
+        }
     }
 
     @SneakyThrows
@@ -262,27 +260,6 @@ public class EncryptMyPack {
     }
 
     @SneakyThrows
-    public static void decryptSubPack(ZipFile inputZip, ZipOutputStream zos, String subPackPath, String key) {
-        log("Decrypting sub pack: " + subPackPath);
-        Content content = decryptContentsJson(inputZip, subPackPath + "contents.json", key);
-
-        for (var contentEntry : content.content) {
-            var entryPath = subPackPath + contentEntry.path;
-            var zipEntry = inputZip.getEntry(entryPath);
-            if (zipEntry == null) {
-                err("Zip entry not exists: " + entryPath);
-                continue;
-            }
-            var bytes = inputZip.getInputStream(zipEntry).readAllBytes();
-            zos.putNextEntry((ZipEntry) zipEntry.clone());
-            var entryKey = contentEntry.key;
-            log("Decrypting sub pack file: " + entryPath);
-            decryptFile(zos, bytes, entryKey);
-            zos.closeEntry();
-        }
-    }
-
-    @SneakyThrows
     private static Content decryptContentsJson(ZipFile inputZip, String subPackPath, String key) {
         try (var stream = inputZip.getInputStream(inputZip.getEntry(subPackPath))) {
             stream.skip(0x100);
@@ -295,6 +272,14 @@ public class EncryptMyPack {
             log("Decrypted content json: " + content);
             return content;
         }
+    }
+
+    public static boolean isSubPackFile(ZipEntry zipEntry) {
+        return zipEntry.getName().startsWith("subpacks/");
+    }
+
+    public static boolean isSubPackRoot(ZipEntry zipEntry) {
+        return zipEntry.isDirectory() && zipEntry.getName().startsWith("subpacks/") && calCharCount(zipEntry.getName(), '/') == 2;
     }
 
     @SneakyThrows
@@ -338,9 +323,11 @@ public class EncryptMyPack {
         System.err.println(msg);
     }
 
-    public record Content(List<ContentEntry> content) {}
+    public record Content(List<ContentEntry> content) {
+    }
 
-    public record ContentEntry(String path, String key) {}
+    public record ContentEntry(String path, String key) {
+    }
 
     public static class Manifest {
 
