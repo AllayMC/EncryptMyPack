@@ -100,12 +100,14 @@ public class EncryptMyPack {
         var outputStream = new ZipOutputStream(new FileOutputStream(outputName), StandardCharsets.UTF_8);
         // Encrypt files
         inputZip.stream().forEach(zipEntry -> {
-            if (isSubPackRoot(zipEntry)) {
-                // Handle sub pack
-                encryptSubPack(inputZip, outputStream, zipEntry.getName(), key, contentId);
+            if (zipEntry.isDirectory()) {
+                createDirectoryRoot(zipEntry, outputStream);
+                if (isSubPackRoot(zipEntry)) {
+                    // Handle sub pack
+                    encryptSubPack(inputZip, outputStream, zipEntry.getName(), key, contentId);
+                }
                 return;
             }
-            if (zipEntry.isDirectory()) return;
             // Sub pack files will be handled in encryptSubPack()
             if (isSubPackFile(zipEntry)) return;
             String entryKey = null;
@@ -127,20 +129,22 @@ public class EncryptMyPack {
     }
 
     @SneakyThrows
+    public static void createDirectoryRoot(ZipEntry zipEntry, ZipOutputStream outputStream) {
+        outputStream.putNextEntry((ZipEntry) zipEntry.clone());
+        outputStream.closeEntry();
+    }
+
+    @SneakyThrows
     public static void encryptSubPack(ZipFile inputZip, ZipOutputStream zos, String subPackPath, String key, String contentId) {
         log("Encrypting sub pack: " + subPackPath);
         var subPackContentEntries = new ArrayList<ContentEntry>();
 
         // Encrypt files
         inputZip.stream().forEach(zipEntry -> {
-            if (zipEntry.isDirectory()) {
-                return;
-            }
-            if (!zipEntry.getName().startsWith(subPackPath)) {
-                return;
-            }
+            if (zipEntry.isDirectory()) return;
+            if (!zipEntry.getName().startsWith(subPackPath)) return;
             String entryKey = encryptFile(inputZip, zos, zipEntry);
-            log("File: " + zipEntry.getName() + ", entryKey: " + entryKey);
+            log("Sub pack file: " + zipEntry.getName() + ", entryKey: " + entryKey);
             subPackContentEntries.add(new ContentEntry(zipEntry.getName().substring(subPackPath.length()), entryKey));
         });
 
@@ -229,21 +233,11 @@ public class EncryptMyPack {
                 // Just copy it to output folder
                 log("Copying file: " + entryPath);
                 outputStream.write(bytes);
-                outputStream.closeEntry();
             } else {
                 log("Decrypting file: " + entryPath);
-                var entryKeyBytes = entryKey.getBytes(StandardCharsets.UTF_8);
-                if (entryKeyBytes.length != KEY_LENGTH) {
-                    err("Invalid key length (length should be " + KEY_LENGTH + "): " + entryKey);
-                    continue;
-                }
-                var secretKey = new SecretKeySpec(entryKeyBytes, "AES");
-                var cipher = Cipher.getInstance("AES/CFB8/NoPadding");
-                cipher.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(entryKey.substring(0, 16).getBytes(StandardCharsets.UTF_8)));
-                var decryptedBytes = cipher.doFinal(bytes);
-                outputStream.write(decryptedBytes);
-                outputStream.closeEntry();
+                decryptFile(outputStream, bytes, entryKey);
             }
+            outputStream.closeEntry();
         }
 
         // Handle sub packs (if exist)
@@ -251,6 +245,20 @@ public class EncryptMyPack {
 
         outputStream.close();
         log("Decrypted " + inputZip.getName() + " with key " + key + " successfully");
+    }
+
+    @SneakyThrows
+    public static void decryptFile(ZipOutputStream zos, byte[] bytes, String entryKey) {
+        var entryKeyBytes = entryKey.getBytes(StandardCharsets.UTF_8);
+        if (entryKeyBytes.length != KEY_LENGTH) {
+            err("Invalid key length (length should be " + KEY_LENGTH + "): " + entryKey);
+            return;
+        }
+        var secretKey = new SecretKeySpec(entryKeyBytes, "AES");
+        var cipher = Cipher.getInstance("AES/CFB8/NoPadding");
+        cipher.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(entryKey.substring(0, 16).getBytes(StandardCharsets.UTF_8)));
+        var decryptedBytes = cipher.doFinal(bytes);
+        zos.write(decryptedBytes);
     }
 
     @SneakyThrows
@@ -268,17 +276,8 @@ public class EncryptMyPack {
             var bytes = inputZip.getInputStream(zipEntry).readAllBytes();
             zos.putNextEntry((ZipEntry) zipEntry.clone());
             var entryKey = contentEntry.key;
-            log("Decrypting file: " + entryPath);
-            var entryKeyBytes = entryKey.getBytes(StandardCharsets.UTF_8);
-            if (entryKeyBytes.length != KEY_LENGTH) {
-                err("Invalid key length (length should be " + KEY_LENGTH + "): " + entryKey);
-                continue;
-            }
-            var secretKey = new SecretKeySpec(entryKeyBytes, "AES");
-            var cipher = Cipher.getInstance("AES/CFB8/NoPadding");
-            cipher.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(entryKey.substring(0, 16).getBytes(StandardCharsets.UTF_8)));
-            var decryptedBytes = cipher.doFinal(bytes);
-            zos.write(decryptedBytes);
+            log("Decrypting sub pack file: " + entryPath);
+            decryptFile(zos, bytes, entryKey);
             zos.closeEntry();
         }
     }
