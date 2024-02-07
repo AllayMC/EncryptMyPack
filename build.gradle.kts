@@ -1,9 +1,11 @@
 plugins {
     id("java")
+    // Shadow jar plugin
+    id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
 group = "org.allaymc"
-version = "1.0-SNAPSHOT"
+version = "1.0.0"
 
 repositories {
     mavenCentral()
