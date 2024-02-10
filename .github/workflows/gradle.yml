@@ -30,7 +30,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Native Executable
-        run: gradlew nativeCompile
+        run: ./gradlew.bat nativeCompile
 
       - name: Upload EncryptMyPack.exe
         uses: actions/upload-artifact@v2
