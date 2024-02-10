@@ -38,3 +38,9 @@ graalvmNative {
         resources.autodetect()
     }
 }
+
+tasks.runShadow {
+    val runningDir = File("run")
+    runningDir.mkdirs()
+    workingDir = runningDir
+}

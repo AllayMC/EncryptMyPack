@@ -32,6 +32,16 @@
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.String"] }, {"name":"key","parameterTypes":[] }, {"name":"path","parameterTypes":[] }]
 },
 {
+  "name":"org.allaymc.encryptmypack.EncryptMyPack$Manifest",
+  "allDeclaredFields":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.allaymc.encryptmypack.EncryptMyPack$Manifest$Header",
+  "allDeclaredFields":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
   "name":"sun.security.provider.DRBG",
   "methods":[{"name":"<init>","parameterTypes":["java.security.SecureRandomParameters"] }]
 }
