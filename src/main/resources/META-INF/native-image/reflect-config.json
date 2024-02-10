@@ -1,0 +1,38 @@
+[
+{
+  "name":"com.sun.crypto.provider.AESCipher$General",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"java.lang.Class",
+  "methods":[{"name":"getRecordComponents","parameterTypes":[] }, {"name":"isRecord","parameterTypes":[] }]
+},
+{
+  "name":"java.lang.Record",
+  "allDeclaredFields":true
+},
+{
+  "name":"java.lang.reflect.RecordComponent",
+  "methods":[{"name":"getName","parameterTypes":[] }, {"name":"getType","parameterTypes":[] }]
+},
+{
+  "name":"java.security.SecureRandomParameters"
+},
+{
+  "name":"java.sql.Date"
+},
+{
+  "name":"org.allaymc.encryptmypack.EncryptMyPack$Content",
+  "allDeclaredFields":true,
+  "methods":[{"name":"<init>","parameterTypes":["java.util.List"] }, {"name":"content","parameterTypes":[] }]
+},
+{
+  "name":"org.allaymc.encryptmypack.EncryptMyPack$ContentEntry",
+  "allDeclaredFields":true,
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.String"] }, {"name":"key","parameterTypes":[] }, {"name":"path","parameterTypes":[] }]
+},
+{
+  "name":"sun.security.provider.DRBG",
+  "methods":[{"name":"<init>","parameterTypes":["java.security.SecureRandomParameters"] }]
+}
+]
