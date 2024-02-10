@@ -11,8 +11,6 @@ A command line util for encrypting and decrypting resource packs.
 
 ## Usage
 
-Before use this tool, make sure you have java 21 runtime!
-
 ### Encryption
 
 Command: `java -jar EncryptMyPack.jar encrypt <inputZip> <outputZip> [key]`

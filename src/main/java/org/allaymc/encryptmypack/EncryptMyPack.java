@@ -38,7 +38,7 @@ import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 public class EncryptMyPack {
 
     public static final Gson GSON = new GsonBuilder().disableHtmlEscaping().serializeNulls().setLenient().create();
-    public static final String USAGE = "Usage: java -jar EncryptMyPack.jar <encrypt|decrypt> <inputFolder> <outputFolder> [key]";
+    public static final String USAGE = "Usage: EncryptMyPack.exe <encrypt|decrypt> <inputFolder> <outputFolder> [key]";
     public static final String DEFAULT_KEY = "liulihaocai123456789123456789123";
     public static final List<String> EXCLUDE = List.of("manifest.json", "pack_icon.png", "bug_pack_icon.png");
     public static final int KEY_LENGTH = 32;
