@@ -30,6 +30,12 @@ Command: `java -jar EncryptMyPack.jar decrypt <inputZip> <outputZip> <key>`
 1. Again, the key should be a 32 character long string.
 2. To decrypt the pack, you must provide its key
 
+## Build
+
+This project use graalvm native image to transform the jar to a native executable
+
+So you should set up graalvm and set project JDK to graalvm before building
+
 ## Special thanks
 
 Thanks to [mcrputil](https://github.com/valaphee/mcrputil) for their great work!

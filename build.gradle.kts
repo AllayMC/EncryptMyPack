@@ -3,8 +3,8 @@ plugins {
     application
     // Shadow jar plugin
     id("com.github.johnrengelman.shadow") version "8.1.1"
+    id("org.graalvm.buildtools.native") version "0.10.0"
 }
-
 group = "org.allaymc"
 version = "1.0.0"
 
@@ -31,4 +31,10 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+graalvmNative {
+    binaries.all {
+        resources.autodetect()
+    }
 }
