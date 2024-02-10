@@ -1,11 +1,16 @@
 plugins {
     id("java")
+    application
     // Shadow jar plugin
     id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
 group = "org.allaymc"
 version = "1.0.0"
+
+application {
+    mainClass.set("org.allaymc.encryptmypack.EncryptMyPack")
+}
 
 repositories {
     mavenCentral()
