@@ -33,8 +33,17 @@ jobs:
           distribution: 'graalvm'
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build Native Executable
-        run: gradlew nativeCompile
+      - name: Build Windows Native Executable
+        if: matrix.os == 'windows-latest'
+        run: ./gradlew.bat nativeCompile
+
+      - name: Build Linux Native Executable
+        if: matrix.os == 'ubuntu-latest'
+        run: ./gradlew nativeCompile
+
+      - name: Build MacOS Native Executable
+        if: matrix.os == 'macos-latest'
+        run: ./gradlew nativeCompile
 
       - name: Upload Files
         uses: actions/upload-artifact@v2
