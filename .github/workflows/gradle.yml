@@ -39,7 +39,9 @@ jobs:
 
       - name: Build Linux Native Executable
         if: matrix.os == 'ubuntu-latest'
-        run: ./gradlew nativeCompile
+        run: |
+          chmod +x gradlew
+          ./gradlew nativeCompile
 
       - name: Build MacOS Native Executable
         if: matrix.os == 'macos-latest'
