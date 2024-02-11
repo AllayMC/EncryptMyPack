@@ -38,13 +38,7 @@ jobs:
         run: ./gradlew.bat nativeCompile
 
       - name: Build Linux Native Executable
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          chmod +x gradlew
-          ./gradlew nativeCompile
-
-      - name: Build MacOS Native Executable
-        if: matrix.os == 'macos-latest'
+        if: matrix.os != 'windows-latest'
         run: |
           chmod +x gradlew
           ./gradlew nativeCompile
