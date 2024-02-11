@@ -15,10 +15,14 @@ on:
 
 jobs:
   build:
-
-    runs-on: windows-latest
     permissions:
       contents: read
+
+    strategy:
+      matrix:
+        os: [ macos-latest, windows-latest, ubuntu-latest ]
+
+    runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v4
@@ -30,11 +34,11 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Native Executable
-        run: ./gradlew.bat nativeCompile
+        run: gradlew nativeCompile
 
-      - name: Upload EncryptMyPack.exe
+      - name: Upload Files
         uses: actions/upload-artifact@v2
         if: success()
         with:
-          name: EncryptMyPack.exe
-          path: build/native/nativeCompile/EncryptMyPack.exe
+          name: EncryptMyPack-${{ matrix.os }}
+          path: build/native/nativeCompile/EncryptMyPack*
