@@ -11,9 +11,11 @@ A command line util for encrypting and decrypting resource packs.
 
 ## Usage
 
+Download the latest executable file from github action
+
 ### Encryption
 
-Command: `java -jar EncryptMyPack.jar encrypt <inputZip> <outputZip> [key]`
+Command: `EncryptMyPack.exe encrypt <inputZip> <outputZip> [key]`
 
 1. The key should be a 32 character long string. If you don't provide a key, the key will be `liulihaocai123456789123456789123`
 
@@ -23,7 +25,7 @@ After the encryption, a `contents.json` should now be in output zip file, and th
 
 ### Decryption
 
-Command: `java -jar EncryptMyPack.jar decrypt <inputZip> <outputZip> <key>`
+Command: `EncryptMyPack.exe decrypt <inputZip> <outputZip> <key>`
 
 1. Again, the key should be a 32 character long string.
 2. To decrypt the pack, you must provide its key
