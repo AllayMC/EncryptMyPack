@@ -80,7 +80,7 @@ public class EncryptMyPack {
         var contentId = findContentId(inputZip);
         log("ContentId: " + contentId);
 
-        var contentEntries = new ArrayList<ContentEntry>();
+        var contentEntries = new ArrayList<org.allaymc.encryptmypack.EncryptMyPack.ContentEntry>();
 
         // Delete old output
         Files.deleteIfExists(Path.of(outputName));
@@ -107,7 +107,7 @@ public class EncryptMyPack {
                 entryKey = encryptFile(inputZip, outputStream, zipEntry);
             }
             log("File: " + zipEntry.getName() + ", entryKey: " + entryKey);
-            contentEntries.add(new ContentEntry(zipEntry.getName(), entryKey));
+            contentEntries.add(new org.allaymc.encryptmypack.EncryptMyPack.ContentEntry(zipEntry.getName(), entryKey));
         });
 
         generateContentsJson("contents.json", outputStream, contentId, key, contentEntries);
@@ -124,7 +124,7 @@ public class EncryptMyPack {
     @SneakyThrows
     public static void encryptSubPack(ZipFile inputZip, ZipOutputStream zos, String subPackPath, String key, String contentId) {
         log("Encrypting sub pack: " + subPackPath);
-        var subPackContentEntries = new ArrayList<ContentEntry>();
+        var subPackContentEntries = new ArrayList<org.allaymc.encryptmypack.EncryptMyPack.ContentEntry>();
 
         // Encrypt files
         inputZip.stream().forEach(zipEntry -> {
@@ -132,13 +132,13 @@ public class EncryptMyPack {
             if (!zipEntry.getName().startsWith(subPackPath)) return;
             String entryKey = encryptFile(inputZip, zos, zipEntry);
             log("Sub pack file: " + zipEntry.getName() + ", entryKey: " + entryKey);
-            subPackContentEntries.add(new ContentEntry(zipEntry.getName().substring(subPackPath.length()), entryKey));
+            subPackContentEntries.add(new org.allaymc.encryptmypack.EncryptMyPack.ContentEntry(zipEntry.getName().substring(subPackPath.length()), entryKey));
         });
 
         generateContentsJson(subPackPath + "contents.json", zos, contentId, key, subPackContentEntries);
     }
 
-    public static void generateContentsJson(String name, ZipOutputStream outputStream, String contentId, String key, ArrayList<ContentEntry> contentEntries) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
+    public static void generateContentsJson(String name, ZipOutputStream outputStream, String contentId, String key, ArrayList<org.allaymc.encryptmypack.EncryptMyPack.ContentEntry> contentEntries) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
         outputStream.putNextEntry(new ZipEntry(name));
         try (var stream = new ByteArrayOutputStream()) {
             stream.write(VERSION);
@@ -154,7 +154,7 @@ public class EncryptMyPack {
             var cipher = Cipher.getInstance("AES/CFB8/NoPadding");
             cipher.init(Cipher.ENCRYPT_MODE, secretKey, new IvParameterSpec(key.substring(0, 16).getBytes(StandardCharsets.UTF_8)));
             // Write contents.json
-            var contentJson = GSON.toJson(new Content(contentEntries));
+            var contentJson = GSON.toJson(new org.allaymc.encryptmypack.EncryptMyPack.Content(contentEntries));
             paddingTo(stream, 0x100);
             stream.write(cipher.doFinal(contentJson.getBytes(StandardCharsets.UTF_8)));
             outputStream.write(stream.toByteArray());
@@ -191,14 +191,14 @@ public class EncryptMyPack {
 
     @SneakyThrows
     public static void decrypt(ZipFile inputZip, String outputName, String key) {
-        Content content = decryptContentsJson(inputZip, "contents.json", key);
+        org.allaymc.encryptmypack.EncryptMyPack.Content content = decryptContentsJson(inputZip, "contents.json", key);
 
         // Delete old output
         Files.deleteIfExists(Path.of(outputName));
         var outputStream = new ZipOutputStream(new FileOutputStream(outputName));
         // Decrypt files
-        for (var contentEntry : content.content) {
-            var entryPath = contentEntry.path;
+        for (var contentEntry : content.content()) {
+            var entryPath = contentEntry.path();
             var zipEntry = inputZip.getEntry(entryPath);
             if (zipEntry == null) {
                 err("Zip entry not exists: " + entryPath);
@@ -206,20 +206,20 @@ public class EncryptMyPack {
             }
             outputStream.putNextEntry((ZipEntry) zipEntry.clone());
             var bytes = inputZip.getInputStream(zipEntry).readAllBytes();
-            if (contentEntry.key == null) {
+            if (contentEntry.key() == null) {
                 // manifest.json, pack_icon.png, bug_pack_icon.png etc...
                 // Just copy it to output folder
                 log("Copying file: " + entryPath);
                 outputStream.write(bytes);
             } else {
                 log("Decrypting file: " + entryPath);
-                decryptFile(outputStream, bytes, contentEntry.key);
+                decryptFile(outputStream, bytes, contentEntry.key());
             }
             outputStream.closeEntry();
         }
 
         // Handle sub packs (if exist)
-        inputZip.stream().filter(EncryptMyPack::isSubPackRoot).forEach(zipEntry -> decryptSubPack(inputZip, outputStream, zipEntry.getName(), key));
+        inputZip.stream().filter(org.allaymc.encryptmypack.EncryptMyPack::isSubPackRoot).forEach(zipEntry -> decryptSubPack(inputZip, outputStream, zipEntry.getName(), key));
 
         outputStream.close();
         log("Decrypted " + inputZip.getName() + " with key " + key + " successfully");
@@ -228,10 +228,10 @@ public class EncryptMyPack {
     @SneakyThrows
     public static void decryptSubPack(ZipFile inputZip, ZipOutputStream zos, String subPackPath, String key) {
         log("Decrypting sub pack: " + subPackPath);
-        Content content = decryptContentsJson(inputZip, subPackPath + "contents.json", key);
+        org.allaymc.encryptmypack.EncryptMyPack.Content content = decryptContentsJson(inputZip, subPackPath + "contents.json", key);
 
-        for (var contentEntry : content.content) {
-            var entryPath = subPackPath + contentEntry.path;
+        for (var contentEntry : content.content()) {
+            var entryPath = subPackPath + contentEntry.path();
             var zipEntry = inputZip.getEntry(entryPath);
             if (zipEntry == null) {
                 err("Zip entry not exists: " + entryPath);
@@ -240,7 +240,7 @@ public class EncryptMyPack {
             zos.putNextEntry((ZipEntry) zipEntry.clone());
             var bytes = inputZip.getInputStream(zipEntry).readAllBytes();
             log("Decrypting sub pack file: " + entryPath);
-            decryptFile(zos, bytes, contentEntry.key);
+            decryptFile(zos, bytes, contentEntry.key());
             zos.closeEntry();
         }
     }
@@ -260,7 +260,7 @@ public class EncryptMyPack {
     }
 
     @SneakyThrows
-    private static Content decryptContentsJson(ZipFile inputZip, String subPackPath, String key) {
+    private static org.allaymc.encryptmypack.EncryptMyPack.Content decryptContentsJson(ZipFile inputZip, String subPackPath, String key) {
         try (var stream = inputZip.getInputStream(inputZip.getEntry(subPackPath))) {
             stream.skip(0x100);
             var bytes = stream.readAllBytes();
@@ -268,7 +268,7 @@ public class EncryptMyPack {
             var cipher = Cipher.getInstance("AES/CFB8/NoPadding");
             cipher.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(key.substring(0, 16).getBytes(StandardCharsets.UTF_8)));
             var decryptedBytes = cipher.doFinal(bytes);
-            Content content = GSON.fromJson(new String(decryptedBytes), Content.class);
+            org.allaymc.encryptmypack.EncryptMyPack.Content content = GSON.fromJson(new String(decryptedBytes), org.allaymc.encryptmypack.EncryptMyPack.Content.class);
             log("Decrypted content json: " + content);
             return content;
         }
@@ -303,7 +303,7 @@ public class EncryptMyPack {
     public static String findContentId(ZipFile zip) {
         var manifestEntry = zip.getEntry("manifest.json");
         if (manifestEntry == null) throw new IllegalArgumentException("manifest file not exists");
-        Manifest manifest = GSON.fromJson(new JsonReader(new InputStreamReader(zip.getInputStream(manifestEntry), StandardCharsets.UTF_8)), Manifest.class);
+        org.allaymc.encryptmypack.EncryptMyPack.Manifest manifest = GSON.fromJson(new JsonReader(new InputStreamReader(zip.getInputStream(manifestEntry), StandardCharsets.UTF_8)), org.allaymc.encryptmypack.EncryptMyPack.Manifest.class);
         return manifest.header.uuid;
     }
 
@@ -323,7 +323,7 @@ public class EncryptMyPack {
         System.err.println(msg);
     }
 
-    public record Content(List<ContentEntry> content) {
+    public record Content(List<org.allaymc.encryptmypack.EncryptMyPack.ContentEntry> content) {
     }
 
     public record ContentEntry(String path, String key) {
@@ -331,7 +331,7 @@ public class EncryptMyPack {
 
     public static class Manifest {
 
-        public Header header;
+        public org.allaymc.encryptmypack.EncryptMyPack.Manifest.Header header;
 
         public static class Header {
             private String uuid;
