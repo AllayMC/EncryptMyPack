@@ -35,6 +35,9 @@ tasks.test {
 
 graalvmNative {
     binaries.all {
+        javaLauncher.set(javaToolchains.launcherFor {
+            languageVersion.set(JavaLanguageVersion.of(21))
+        })
         resources.autodetect()
     }
 }

@@ -173,8 +173,7 @@ public class EncryptMyPack {
 
     @SneakyThrows
     public static String encryptFile(ZipFile inputZip, ZipOutputStream outputStream, ZipEntry zipEntry) {
-        byte[] bytes;
-        bytes = inputZip.getInputStream(zipEntry).readAllBytes();
+        byte[] bytes = inputZip.getInputStream(zipEntry).readAllBytes();
         // Init encryptor
         var key = randomAlphanumeric(KEY_LENGTH);
         var secretKey = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "AES");
@@ -183,11 +182,12 @@ public class EncryptMyPack {
         // Encrypt the file
         var encryptedBytes = cipher.doFinal(bytes);
         // Write bytes
-        outputStream.putNextEntry((ZipEntry) zipEntry.clone());
+        outputStream.putNextEntry(new ZipEntry(zipEntry.getName()));
         outputStream.write(encryptedBytes);
-        outputStream.closeEntry();
+        outputStream.closeEntry();  // Закрываем entry после записи данных
         return key;
     }
+
 
     @SneakyThrows
     public static void decrypt(ZipFile inputZip, String outputName, String key) {
