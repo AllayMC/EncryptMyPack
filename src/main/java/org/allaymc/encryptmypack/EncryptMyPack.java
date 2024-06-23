@@ -5,22 +5,15 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
 import lombok.SneakyThrows;
 
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.ZipEntry;
@@ -138,7 +131,8 @@ public class EncryptMyPack {
         generateContentsJson(subPackPath + "contents.json", zos, contentId, key, subPackContentEntries);
     }
 
-    public static void generateContentsJson(String name, ZipOutputStream outputStream, String contentId, String key, ArrayList<ContentEntry> contentEntries) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
+    @SneakyThrows
+    public static void generateContentsJson(String name, ZipOutputStream outputStream, String contentId, String key, ArrayList<ContentEntry> contentEntries) {
         outputStream.putNextEntry(new ZipEntry(name));
         try (var stream = new ByteArrayOutputStream()) {
             stream.write(VERSION);
@@ -173,8 +167,7 @@ public class EncryptMyPack {
 
     @SneakyThrows
     public static String encryptFile(ZipFile inputZip, ZipOutputStream outputStream, ZipEntry zipEntry) {
-        byte[] bytes;
-        bytes = inputZip.getInputStream(zipEntry).readAllBytes();
+        byte[] bytes = inputZip.getInputStream(zipEntry).readAllBytes();
         // Init encryptor
         var key = randomAlphanumeric(KEY_LENGTH);
         var secretKey = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "AES");
@@ -183,11 +176,12 @@ public class EncryptMyPack {
         // Encrypt the file
         var encryptedBytes = cipher.doFinal(bytes);
         // Write bytes
-        outputStream.putNextEntry((ZipEntry) zipEntry.clone());
+        outputStream.putNextEntry(new ZipEntry(zipEntry.getName()));
         outputStream.write(encryptedBytes);
-        outputStream.closeEntry();
+        outputStream.closeEntry();  // Закрываем entry после записи данных
         return key;
     }
+
 
     @SneakyThrows
     public static void decrypt(ZipFile inputZip, String outputName, String key) {
@@ -197,8 +191,8 @@ public class EncryptMyPack {
         Files.deleteIfExists(Path.of(outputName));
         var outputStream = new ZipOutputStream(new FileOutputStream(outputName));
         // Decrypt files
-        for (var contentEntry : content.content) {
-            var entryPath = contentEntry.path;
+        for (var contentEntry : content.content()) {
+            var entryPath = contentEntry.path();
             var zipEntry = inputZip.getEntry(entryPath);
             if (zipEntry == null) {
                 err("Zip entry not exists: " + entryPath);
@@ -206,14 +200,14 @@ public class EncryptMyPack {
             }
             outputStream.putNextEntry((ZipEntry) zipEntry.clone());
             var bytes = inputZip.getInputStream(zipEntry).readAllBytes();
-            if (contentEntry.key == null) {
+            if (contentEntry.key() == null) {
                 // manifest.json, pack_icon.png, bug_pack_icon.png etc...
                 // Just copy it to output folder
                 log("Copying file: " + entryPath);
                 outputStream.write(bytes);
             } else {
                 log("Decrypting file: " + entryPath);
-                decryptFile(outputStream, bytes, contentEntry.key);
+                decryptFile(outputStream, bytes, contentEntry.key());
             }
             outputStream.closeEntry();
         }
@@ -230,8 +224,8 @@ public class EncryptMyPack {
         log("Decrypting sub pack: " + subPackPath);
         Content content = decryptContentsJson(inputZip, subPackPath + "contents.json", key);
 
-        for (var contentEntry : content.content) {
-            var entryPath = subPackPath + contentEntry.path;
+        for (var contentEntry : content.content()) {
+            var entryPath = subPackPath + contentEntry.path();
             var zipEntry = inputZip.getEntry(entryPath);
             if (zipEntry == null) {
                 err("Zip entry not exists: " + entryPath);
@@ -240,7 +234,7 @@ public class EncryptMyPack {
             zos.putNextEntry((ZipEntry) zipEntry.clone());
             var bytes = inputZip.getInputStream(zipEntry).readAllBytes();
             log("Decrypting sub pack file: " + entryPath);
-            decryptFile(zos, bytes, contentEntry.key);
+            decryptFile(zos, bytes, contentEntry.key());
             zos.closeEntry();
         }
     }
