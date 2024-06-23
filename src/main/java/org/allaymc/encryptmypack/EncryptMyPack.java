@@ -5,22 +5,15 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
 import lombok.SneakyThrows;
 
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.ZipEntry;
@@ -80,7 +73,7 @@ public class EncryptMyPack {
         var contentId = findContentId(inputZip);
         log("ContentId: " + contentId);
 
-        var contentEntries = new ArrayList<org.allaymc.encryptmypack.EncryptMyPack.ContentEntry>();
+        var contentEntries = new ArrayList<ContentEntry>();
 
         // Delete old output
         Files.deleteIfExists(Path.of(outputName));
@@ -107,7 +100,7 @@ public class EncryptMyPack {
                 entryKey = encryptFile(inputZip, outputStream, zipEntry);
             }
             log("File: " + zipEntry.getName() + ", entryKey: " + entryKey);
-            contentEntries.add(new org.allaymc.encryptmypack.EncryptMyPack.ContentEntry(zipEntry.getName(), entryKey));
+            contentEntries.add(new ContentEntry(zipEntry.getName(), entryKey));
         });
 
         generateContentsJson("contents.json", outputStream, contentId, key, contentEntries);
@@ -124,7 +117,7 @@ public class EncryptMyPack {
     @SneakyThrows
     public static void encryptSubPack(ZipFile inputZip, ZipOutputStream zos, String subPackPath, String key, String contentId) {
         log("Encrypting sub pack: " + subPackPath);
-        var subPackContentEntries = new ArrayList<org.allaymc.encryptmypack.EncryptMyPack.ContentEntry>();
+        var subPackContentEntries = new ArrayList<ContentEntry>();
 
         // Encrypt files
         inputZip.stream().forEach(zipEntry -> {
@@ -132,13 +125,14 @@ public class EncryptMyPack {
             if (!zipEntry.getName().startsWith(subPackPath)) return;
             String entryKey = encryptFile(inputZip, zos, zipEntry);
             log("Sub pack file: " + zipEntry.getName() + ", entryKey: " + entryKey);
-            subPackContentEntries.add(new org.allaymc.encryptmypack.EncryptMyPack.ContentEntry(zipEntry.getName().substring(subPackPath.length()), entryKey));
+            subPackContentEntries.add(new ContentEntry(zipEntry.getName().substring(subPackPath.length()), entryKey));
         });
 
         generateContentsJson(subPackPath + "contents.json", zos, contentId, key, subPackContentEntries);
     }
 
-    public static void generateContentsJson(String name, ZipOutputStream outputStream, String contentId, String key, ArrayList<org.allaymc.encryptmypack.EncryptMyPack.ContentEntry> contentEntries) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
+    @SneakyThrows
+    public static void generateContentsJson(String name, ZipOutputStream outputStream, String contentId, String key, ArrayList<ContentEntry> contentEntries) {
         outputStream.putNextEntry(new ZipEntry(name));
         try (var stream = new ByteArrayOutputStream()) {
             stream.write(VERSION);
@@ -154,7 +148,7 @@ public class EncryptMyPack {
             var cipher = Cipher.getInstance("AES/CFB8/NoPadding");
             cipher.init(Cipher.ENCRYPT_MODE, secretKey, new IvParameterSpec(key.substring(0, 16).getBytes(StandardCharsets.UTF_8)));
             // Write contents.json
-            var contentJson = GSON.toJson(new org.allaymc.encryptmypack.EncryptMyPack.Content(contentEntries));
+            var contentJson = GSON.toJson(new Content(contentEntries));
             paddingTo(stream, 0x100);
             stream.write(cipher.doFinal(contentJson.getBytes(StandardCharsets.UTF_8)));
             outputStream.write(stream.toByteArray());
@@ -191,7 +185,7 @@ public class EncryptMyPack {
 
     @SneakyThrows
     public static void decrypt(ZipFile inputZip, String outputName, String key) {
-        org.allaymc.encryptmypack.EncryptMyPack.Content content = decryptContentsJson(inputZip, "contents.json", key);
+        Content content = decryptContentsJson(inputZip, "contents.json", key);
 
         // Delete old output
         Files.deleteIfExists(Path.of(outputName));
@@ -219,7 +213,7 @@ public class EncryptMyPack {
         }
 
         // Handle sub packs (if exist)
-        inputZip.stream().filter(org.allaymc.encryptmypack.EncryptMyPack::isSubPackRoot).forEach(zipEntry -> decryptSubPack(inputZip, outputStream, zipEntry.getName(), key));
+        inputZip.stream().filter(EncryptMyPack::isSubPackRoot).forEach(zipEntry -> decryptSubPack(inputZip, outputStream, zipEntry.getName(), key));
 
         outputStream.close();
         log("Decrypted " + inputZip.getName() + " with key " + key + " successfully");
@@ -228,7 +222,7 @@ public class EncryptMyPack {
     @SneakyThrows
     public static void decryptSubPack(ZipFile inputZip, ZipOutputStream zos, String subPackPath, String key) {
         log("Decrypting sub pack: " + subPackPath);
-        org.allaymc.encryptmypack.EncryptMyPack.Content content = decryptContentsJson(inputZip, subPackPath + "contents.json", key);
+        Content content = decryptContentsJson(inputZip, subPackPath + "contents.json", key);
 
         for (var contentEntry : content.content()) {
             var entryPath = subPackPath + contentEntry.path();
@@ -260,7 +254,7 @@ public class EncryptMyPack {
     }
 
     @SneakyThrows
-    private static org.allaymc.encryptmypack.EncryptMyPack.Content decryptContentsJson(ZipFile inputZip, String subPackPath, String key) {
+    private static Content decryptContentsJson(ZipFile inputZip, String subPackPath, String key) {
         try (var stream = inputZip.getInputStream(inputZip.getEntry(subPackPath))) {
             stream.skip(0x100);
             var bytes = stream.readAllBytes();
@@ -268,7 +262,7 @@ public class EncryptMyPack {
             var cipher = Cipher.getInstance("AES/CFB8/NoPadding");
             cipher.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(key.substring(0, 16).getBytes(StandardCharsets.UTF_8)));
             var decryptedBytes = cipher.doFinal(bytes);
-            org.allaymc.encryptmypack.EncryptMyPack.Content content = GSON.fromJson(new String(decryptedBytes), org.allaymc.encryptmypack.EncryptMyPack.Content.class);
+            Content content = GSON.fromJson(new String(decryptedBytes), Content.class);
             log("Decrypted content json: " + content);
             return content;
         }
@@ -303,7 +297,7 @@ public class EncryptMyPack {
     public static String findContentId(ZipFile zip) {
         var manifestEntry = zip.getEntry("manifest.json");
         if (manifestEntry == null) throw new IllegalArgumentException("manifest file not exists");
-        org.allaymc.encryptmypack.EncryptMyPack.Manifest manifest = GSON.fromJson(new JsonReader(new InputStreamReader(zip.getInputStream(manifestEntry), StandardCharsets.UTF_8)), org.allaymc.encryptmypack.EncryptMyPack.Manifest.class);
+        Manifest manifest = GSON.fromJson(new JsonReader(new InputStreamReader(zip.getInputStream(manifestEntry), StandardCharsets.UTF_8)), Manifest.class);
         return manifest.header.uuid;
     }
 
@@ -323,7 +317,7 @@ public class EncryptMyPack {
         System.err.println(msg);
     }
 
-    public record Content(List<org.allaymc.encryptmypack.EncryptMyPack.ContentEntry> content) {
+    public record Content(List<ContentEntry> content) {
     }
 
     public record ContentEntry(String path, String key) {
@@ -331,7 +325,7 @@ public class EncryptMyPack {
 
     public static class Manifest {
 
-        public org.allaymc.encryptmypack.EncryptMyPack.Manifest.Header header;
+        public Header header;
 
         public static class Header {
             private String uuid;
