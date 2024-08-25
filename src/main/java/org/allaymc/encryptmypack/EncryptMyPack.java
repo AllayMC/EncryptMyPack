@@ -198,23 +198,32 @@ public class EncryptMyPack {
         var outputStream = new ZipOutputStream(new FileOutputStream(outputName));
         // Decrypt files
         for (var contentEntry : content.content) {
+            if (contentEntry.key == null) {
+                continue;
+            }
+
             var entryPath = contentEntry.path;
             var zipEntry = inputZip.getEntry(entryPath);
             if (zipEntry == null) {
                 err("Zip entry not exists: " + entryPath);
                 continue;
             }
+
+            log("Decrypting file: " + entryPath);
             outputStream.putNextEntry((ZipEntry) zipEntry.clone());
-            var bytes = inputZip.getInputStream(zipEntry).readAllBytes();
-            if (contentEntry.key == null) {
-                // manifest.json, pack_icon.png, bug_pack_icon.png etc...
-                // Just copy it to output folder
-                log("Copying file: " + entryPath);
-                outputStream.write(bytes);
-            } else {
-                log("Decrypting file: " + entryPath);
-                decryptFile(outputStream, bytes, contentEntry.key);
-            }
+            decryptFile(outputStream, inputZip.getInputStream(zipEntry).readAllBytes(), contentEntry.key);
+            outputStream.closeEntry();
+        }
+        // Copy excluded files
+        for (var excluded : EXCLUDE) {
+            // manifest.json, pack_icon.png, bug_pack_icon.png etc...
+            // Just copy it to output folder as they are not encrypted
+            var zipEntry = inputZip.getEntry(excluded);
+            if (zipEntry == null) continue;
+
+            log("Copying file: " + excluded);
+            outputStream.putNextEntry((ZipEntry) zipEntry.clone());
+            outputStream.write(inputZip.getInputStream(zipEntry).readAllBytes());
             outputStream.closeEntry();
         }
 
