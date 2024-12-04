@@ -44,7 +44,7 @@ jobs:
           ./gradlew nativeCompile
 
       - name: Upload Files
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: success()
         with:
           name: EncryptMyPack-${{ matrix.os }}
