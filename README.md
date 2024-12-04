@@ -11,7 +11,7 @@ A command line util for encrypting and decrypting resource packs.
 
 ## Usage
 
-Download the latest executable file from github action
+Download the latest executable file from [release](https://github.com/AllayMC/EncryptMyPack/releases/latest)
 
 ### Encryption
 
