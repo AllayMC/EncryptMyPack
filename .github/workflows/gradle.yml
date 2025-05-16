@@ -1,51 +1,45 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-# This workflow will build a Java project with Gradle and cache/restore any dependencies to improve the workflow execution time
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-gradle
-
-name: GraalVM Native Image builds
+name: Build with Gradle
 
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - .github/workflows/build.yml
+      - src/**
   pull_request:
-    branches: [ "main" ]
+    paths:
+      - .github/workflows/build.yml
+      - src/**
 
 jobs:
   build:
-    permissions:
-      contents: read
-
-    strategy:
-      matrix:
-        os: [ macos-latest, windows-latest, ubuntu-latest ]
-
-    runs-on: ${{ matrix.os }}
-
+    runs-on: ubuntu-latest
     steps:
+      # Support for ipv6
+      - name: Set up WARP
+        uses: fscarmen/warp-on-actions@v1.1
+        if: contains(github.ref_name, 'main')
+        with:
+          stack: dual
       - uses: actions/checkout@v4
-
-      - uses: graalvm/setup-graalvm@v1
+      - run: chmod +x gradlew
+      - uses: actions/setup-java@v4
         with:
           java-version: '21'
-          distribution: 'graalvm'
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build Windows Native Executable
-        if: matrix.os == 'windows-latest'
-        run: ./gradlew.bat nativeCompile
-
-      - name: Build Linux Native Executable
-        if: matrix.os != 'windows-latest'
-        run: |
-          chmod +x gradlew
-          ./gradlew nativeCompile
-
-      - name: Upload Files
-        uses: actions/upload-artifact@v4
-        if: success()
+          distribution: 'zulu'
+      - name: Setup gradle
+        uses: gradle/actions/setup-gradle@v4
         with:
-          name: EncryptMyPack-${{ matrix.os }}
-          path: build/native/nativeCompile/EncryptMyPack*
+          gradle-version: wrapper
+          cache-overwrite-existing: true
+          cache-read-only: false
+          build-scan-publish: true
+          build-scan-terms-of-use-url: "https://gradle.com/terms-of-service"
+          build-scan-terms-of-use-agree: "yes"
+      - name: Build
+        run: ./gradlew build
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        if: success() && contains(github.ref_name, 'main')
+        with:
+          path: build/libs/*.jar
