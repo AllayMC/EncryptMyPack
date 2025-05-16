@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "org.allaymc"
-version = "1.0.0"
+version = "2.0.0"
 description = "A tool that can encrypt & decrypt Minecraft: Bedrock Edition resource pack"
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
