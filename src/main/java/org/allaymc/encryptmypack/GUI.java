@@ -1,9 +1,5 @@
 package org.allaymc.encryptmypack;
 
-import com.intellij.uiDesigner.core.GridConstraints;
-import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.jgoodies.forms.layout.CellConstraints;
-import com.jgoodies.forms.layout.FormLayout;
 import jnafilechooser.api.JnaFileChooser;
 
 import javax.swing.*;
@@ -11,8 +7,6 @@ import javax.swing.text.Document;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.OutputStream;
 import java.io.PrintStream;

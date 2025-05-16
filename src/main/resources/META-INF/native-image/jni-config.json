@@ -160,12 +160,17 @@
 },
 {
   "name":"java.awt.event.KeyEvent",
-  "fields":[{"name":"extendedKeyCode"}, {"name":"keyChar"}, {"name":"keyCode"}, {"name":"primaryLevelUnicode"}, {"name":"rawCode"}, {"name":"scancode"}]
+  "fields":[{"name":"extendedKeyCode"}, {"name":"keyChar"}, {"name":"keyCode"}, {"name":"primaryLevelUnicode"}, {"name":"rawCode"}, {"name":"scancode"}],
+  "methods":[{"name":"<init>","parameterTypes":["java.awt.Component","int","long","int","int","char","int"] }]
 },
 {
   "name":"java.awt.event.MouseEvent",
   "fields":[{"name":"button"}, {"name":"causedByTouchEvent"}, {"name":"x"}, {"name":"y"}],
   "methods":[{"name":"<init>","parameterTypes":["java.awt.Component","int","long","int","int","int","int","int","int","boolean","int"] }]
+},
+{
+  "name":"java.awt.event.MouseWheelEvent",
+  "methods":[{"name":"<init>","parameterTypes":["java.awt.Component","int","long","int","int","int","int","int","int","boolean","int","int","int","double"] }]
 },
 {
   "name":"java.awt.geom.AffineTransform",
@@ -416,6 +421,10 @@
   "fields":[{"name":"sdCurrent"}]
 },
 {
+  "name":"sun.awt.windows.WClipboard",
+  "methods":[{"name":"lostSelectionOwnershipImpl","parameterTypes":[] }]
+},
+{
   "name":"sun.awt.windows.WComponentPeer",
   "fields":[{"name":"hwnd"}, {"name":"winGraphicsConfig"}],
   "methods":[{"name":"disposeLater","parameterTypes":[] }, {"name":"dynamicallyLayoutContainer","parameterTypes":[] }, {"name":"handleExpose","parameterTypes":["int","int","int","int"] }, {"name":"postEvent","parameterTypes":["java.awt.AWTEvent"] }, {"name":"replaceSurfaceData","parameterTypes":[] }, {"name":"replaceSurfaceDataLater","parameterTypes":[] }]
@@ -440,6 +449,10 @@
 {
   "name":"sun.awt.windows.WGlobalCursorManager",
   "methods":[{"name":"nativeUpdateCursor","parameterTypes":["java.awt.Component"] }]
+},
+{
+  "name":"sun.awt.windows.WInputMethod",
+  "methods":[{"name":"inquireCandidatePosition","parameterTypes":[] }, {"name":"sendInputMethodEvent","parameterTypes":["int","long","java.lang.String","int[]","java.lang.String[]","int[]","byte[]","int","int","int"] }]
 },
 {
   "name":"sun.awt.windows.WObjectPeer",
@@ -478,6 +491,11 @@
 {
   "name":"sun.font.FreetypeFontScaler",
   "methods":[{"name":"invalidateScaler","parameterTypes":[] }]
+},
+{
+  "name":"sun.font.GlyphLayout$GVData",
+  "fields":[{"name":"_count"}, {"name":"_flags"}, {"name":"_glyphs"}, {"name":"_indices"}, {"name":"_positions"}],
+  "methods":[{"name":"grow","parameterTypes":[] }]
 },
 {
   "name":"sun.font.GlyphList",
@@ -634,6 +652,10 @@
 {
   "name":"sun.java2d.pipe.RegionIterator",
   "fields":[{"name":"curIndex"}, {"name":"numXbands"}, {"name":"region"}]
+},
+{
+  "name":"sun.java2d.pipe.ShapeSpanIterator",
+  "fields":[{"name":"pData"}]
 },
 {
   "name":"sun.java2d.windows.WindowsFlags",

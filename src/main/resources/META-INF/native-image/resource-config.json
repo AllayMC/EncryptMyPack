@@ -53,17 +53,17 @@
   }, {
     "pattern":"\\Qlog4j2-test.yml\\E"
   }, {
-    "pattern":"\\Qlog4j2-test36baf30c.jsn\\E"
+    "pattern":"\\Qlog4j2-testDefault.jsn\\E"
   }, {
-    "pattern":"\\Qlog4j2-test36baf30c.json\\E"
+    "pattern":"\\Qlog4j2-testDefault.json\\E"
   }, {
-    "pattern":"\\Qlog4j2-test36baf30c.properties\\E"
+    "pattern":"\\Qlog4j2-testDefault.properties\\E"
   }, {
-    "pattern":"\\Qlog4j2-test36baf30c.xml\\E"
+    "pattern":"\\Qlog4j2-testDefault.xml\\E"
   }, {
-    "pattern":"\\Qlog4j2-test36baf30c.yaml\\E"
+    "pattern":"\\Qlog4j2-testDefault.yaml\\E"
   }, {
-    "pattern":"\\Qlog4j2-test36baf30c.yml\\E"
+    "pattern":"\\Qlog4j2-testDefault.yml\\E"
   }, {
     "pattern":"\\Qlog4j2.StatusLogger.properties\\E"
   }, {
@@ -83,19 +83,23 @@
   }, {
     "pattern":"\\Qlog4j2.yml\\E"
   }, {
-    "pattern":"\\Qlog4j236baf30c.jsn\\E"
+    "pattern":"\\Qlog4j2Default.jsn\\E"
   }, {
-    "pattern":"\\Qlog4j236baf30c.json\\E"
+    "pattern":"\\Qlog4j2Default.json\\E"
   }, {
-    "pattern":"\\Qlog4j236baf30c.properties\\E"
+    "pattern":"\\Qlog4j2Default.properties\\E"
   }, {
-    "pattern":"\\Qlog4j236baf30c.xml\\E"
+    "pattern":"\\Qlog4j2Default.xml\\E"
   }, {
-    "pattern":"\\Qlog4j236baf30c.yaml\\E"
+    "pattern":"\\Qlog4j2Default.yaml\\E"
   }, {
-    "pattern":"\\Qlog4j236baf30c.yml\\E"
+    "pattern":"\\Qlog4j2Default.yml\\E"
   }, {
-    "pattern":"java.base:\\Qsun/net/www/content-types.properties\\E"
+    "pattern":"java.base:\\Qjdk/internal/icu/impl/data/icudt72b/ubidi.icu\\E"
+  }, {
+    "pattern":"java.base:\\Qsun/text/resources/LineBreakIteratorData\\E"
+  }, {
+    "pattern":"java.datatransfer:\\Qsun/datatransfer/resources/flavormap.properties\\E"
   }, {
     "pattern":"java.desktop:\\Qcom/formdev/flatlaf/resources/Bundle.properties\\E"
   }, {

@@ -1,5 +1,11 @@
 [
 {
+  "name":"[B"
+},
+{
+  "name":"[C"
+},
+{
   "name":"[Ljava.awt.event.MouseListener;"
 },
 {
@@ -125,6 +131,15 @@
   "methods":[{"name":"createUI","parameterTypes":["javax.swing.JComponent"] }]
 },
 {
+  "name":"com.google.gson.Gson"
+},
+{
+  "name":"com.google.gson.internal.bind.ReflectiveTypeAdapterFactory$Adapter"
+},
+{
+  "name":"com.google.gson.stream.JsonReader"
+},
+{
   "name":"com.sun.crypto.provider.AESCipher$General",
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
@@ -162,11 +177,44 @@
   "name":"jakarta.servlet.Servlet"
 },
 {
+  "name":"java.awt.AWTEventMulticaster"
+},
+{
+  "name":"java.awt.Component"
+},
+{
+  "name":"java.awt.Container"
+},
+{
+  "name":"java.awt.EventQueue"
+},
+{
+  "name":"java.awt.EventQueue$4"
+},
+{
+  "name":"java.awt.EventQueue$5"
+},
+{
+  "name":"java.awt.Image"
+},
+{
+  "name":"java.awt.LightweightDispatcher"
+},
+{
   "name":"java.awt.SequencedEvent"
+},
+{
+  "name":"java.awt.Window"
 },
 {
   "name":"java.awt.event.KeyEvent",
   "fields":[{"name":"VK_A"}, {"name":"VK_BACK_SLASH"}, {"name":"VK_BACK_SPACE"}, {"name":"VK_C"}, {"name":"VK_CONTEXT_MENU"}, {"name":"VK_COPY"}, {"name":"VK_CUT"}, {"name":"VK_DELETE"}, {"name":"VK_DOWN"}, {"name":"VK_END"}, {"name":"VK_ENTER"}, {"name":"VK_F10"}, {"name":"VK_H"}, {"name":"VK_HOME"}, {"name":"VK_INSERT"}, {"name":"VK_KP_DOWN"}, {"name":"VK_KP_LEFT"}, {"name":"VK_KP_RIGHT"}, {"name":"VK_KP_UP"}, {"name":"VK_LEFT"}, {"name":"VK_O"}, {"name":"VK_PAGE_DOWN"}, {"name":"VK_PAGE_UP"}, {"name":"VK_PASTE"}, {"name":"VK_RIGHT"}, {"name":"VK_SPACE"}, {"name":"VK_T"}, {"name":"VK_TAB"}, {"name":"VK_UP"}, {"name":"VK_V"}, {"name":"VK_X"}]
+},
+{
+  "name":"java.io.InputStream"
+},
+{
+  "name":"java.io.Reader"
 },
 {
   "name":"java.lang.Class",
@@ -179,6 +227,9 @@
 {
   "name":"java.lang.Record",
   "allDeclaredFields":true
+},
+{
+  "name":"java.lang.String"
 },
 {
   "name":"java.lang.Thread",
@@ -197,7 +248,29 @@
   "methods":[{"name":"getName","parameterTypes":[] }, {"name":"getType","parameterTypes":[] }]
 },
 {
+  "name":"java.net.URL"
+},
+{
   "name":"java.nio.Buffer"
+},
+{
+  "name":"java.nio.ByteBuffer"
+},
+{
+  "name":"java.nio.CharBuffer"
+},
+{
+  "name":"java.nio.file.Files"
+},
+{
+  "name":"java.rmi.MarshalledObject",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.Object"] }, {"name":"get","parameterTypes":[] }]
+},
+{
+  "name":"java.rmi.Remote"
+},
+{
+  "name":"java.security.ProtectionDomain$JavaSecurityAccessImpl"
 },
 {
   "name":"java.security.SecureRandomParameters"
@@ -207,6 +280,9 @@
 },
 {
   "name":"java.sql.Time"
+},
+{
+  "name":"java.util.List"
 },
 {
   "name":"java.util.concurrent.atomic.AtomicBoolean",
@@ -221,11 +297,18 @@
   "fields":[{"name":"base"}, {"name":"cellsBusy"}]
 },
 {
+  "name":"java.util.zip.ZipOutputStream"
+},
+{
   "name":"javax.servlet.Servlet"
 },
 {
   "name":"javax.swing.JComponent",
   "methods":[{"name":"getUI","parameterTypes":[] }]
+},
+{
+  "name":"javax.swing.JTextField",
+  "methods":[{"name":"processInputMethodEvent","parameterTypes":["java.awt.event.InputMethodEvent"] }]
 },
 {
   "name":"javax.swing.plaf.basic.BasicGraphicsUtils",
@@ -246,6 +329,15 @@
 {
   "name":"org.allaymc.encryptmypack.ConsolePanel",
   "methods":[{"name":"coalesceEvents","parameterTypes":["java.awt.AWTEvent","java.awt.AWTEvent"] }]
+},
+{
+  "name":"org.allaymc.encryptmypack.GUI$3"
+},
+{
+  "name":"org.allaymc.encryptmypack.GUI$4"
+},
+{
+  "name":"org.allaymc.encryptmypack.PackEncryptor"
 },
 {
   "name":"org.allaymc.encryptmypack.PackEncryptor$Content",
@@ -1088,6 +1180,18 @@
 {
   "name":"sun.java2d.marlin.DMarlinRenderingEngine",
   "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"sun.nio.fs.AbstractFileSystemProvider"
+},
+{
+  "name":"sun.nio.fs.WindowsException"
+},
+{
+  "name":"sun.nio.fs.WindowsFileSystemProvider"
+},
+{
+  "name":"sun.reflect.Reflection"
 },
 {
   "name":"sun.security.provider.DRBG",
