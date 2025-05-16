@@ -15,12 +15,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # Support for ipv6
-      - name: Set up WARP
-        uses: fscarmen/warp-on-actions@v1.1
-        if: contains(github.ref_name, 'main')
-        with:
-          stack: dual
       - uses: actions/checkout@v4
       - run: chmod +x gradlew
       - uses: actions/setup-java@v4
