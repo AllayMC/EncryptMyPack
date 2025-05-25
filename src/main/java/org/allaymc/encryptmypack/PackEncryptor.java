@@ -121,7 +121,7 @@ public final class PackEncryptor {
 
     @SneakyThrows
     private static void createDirectoryRoot(ZipEntry zipEntry, ZipOutputStream outputStream) {
-        outputStream.putNextEntry((ZipEntry) zipEntry.clone());
+        outputStream.putNextEntry(copyZipEntry(zipEntry));
         outputStream.closeEntry();
     }
 
@@ -172,7 +172,7 @@ public final class PackEncryptor {
     @SneakyThrows
     private static void encryptExcludedFile(ZipFile inputZip, ZipOutputStream outputStream, ZipEntry zipEntry) {
         log.info("Excluded file: {}, copy directly", zipEntry.getName());
-        outputStream.putNextEntry((ZipEntry) zipEntry.clone());
+        outputStream.putNextEntry(copyZipEntry(zipEntry));
         outputStream.write(inputZip.getInputStream(zipEntry).readAllBytes());
         outputStream.closeEntry();
     }
@@ -189,7 +189,7 @@ public final class PackEncryptor {
         // Encrypt the file
         var encryptedBytes = cipher.doFinal(bytes);
         // Write bytes
-        outputStream.putNextEntry((ZipEntry) zipEntry.clone());
+        outputStream.putNextEntry(copyZipEntry(zipEntry));
         outputStream.write(encryptedBytes);
         outputStream.closeEntry();
         return key;
@@ -216,7 +216,7 @@ public final class PackEncryptor {
             }
 
             log.info("Decrypting file: {}", entryPath);
-            outputStream.putNextEntry((ZipEntry) zipEntry.clone());
+            outputStream.putNextEntry(copyZipEntry(zipEntry));
             decryptFile(outputStream, inputZip.getInputStream(zipEntry).readAllBytes(), contentEntry.key);
             outputStream.closeEntry();
         }
@@ -228,7 +228,7 @@ public final class PackEncryptor {
             if (zipEntry == null) continue;
 
             log.info("Copying file: {}", excluded);
-            outputStream.putNextEntry((ZipEntry) zipEntry.clone());
+            outputStream.putNextEntry(copyZipEntry(zipEntry));
             outputStream.write(inputZip.getInputStream(zipEntry).readAllBytes());
             outputStream.closeEntry();
         }
@@ -252,7 +252,7 @@ public final class PackEncryptor {
                 log.error("Zip entry not exists: {}", entryPath);
                 continue;
             }
-            zos.putNextEntry((ZipEntry) zipEntry.clone());
+            zos.putNextEntry(copyZipEntry(zipEntry));
             var bytes = inputZip.getInputStream(zipEntry).readAllBytes();
             log.info("Decrypting sub pack file: {}", entryPath);
             decryptFile(zos, bytes, contentEntry.key);
@@ -355,6 +355,13 @@ public final class PackEncryptor {
         }
 
         return count;
+    }
+
+    private static ZipEntry copyZipEntry(ZipEntry entry) {
+        var newEntry = new ZipEntry(entry);
+        // Explicitly set method to DEFLATED to avoid invalid crc-32 error
+        newEntry.setMethod(ZipEntry.DEFLATED);
+        return newEntry;
     }
 
     protected record Content(List<ContentEntry> content) {}
